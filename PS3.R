@@ -16,6 +16,15 @@ if(!any(.packages(all.available = TRUE) == "mvnfast")){
 library(ggplot2) # graficos
 library(cowplot) # graficos
 
+
+
+# User Defined Functions --------------------------------------------------
+
+source("my_plot_varest.R")
+
+
+# Data load ---------------------------------------------------------------
+
 # faz a leitura do banco de dados
 dados_monpol <- read_excel("dados_monpol.xlsx", 
                            col_types = c("date", "numeric", "numeric", 
@@ -93,35 +102,36 @@ var_bic <- VAR(y.df, p = 1, type = "const")
 
 
 # plota graficos de AIC e BIC
-# plot(var_bic)
-# plot(var_aic)
+par(ask=F)
+my_plot_varest(var_bic, ask=FALSE)
+ # plot(var_aic)
 
 
 # Variaveis exogenas ------------------------------------------------------
 
 #  determina as dummies a serem utilizadas
-dummy1 <- as.numeric(dados_monpol2$dates >= "2001-03-01" & dados_monpol2$dates <= "2001-12-01")
-dummy2 <- as.numeric(dados_monpol2$dates >= "1985-03-01" & dados_monpol2$dates <= "1985-12-01")
-
-#  junta as dummies em uma matriz
-data.exo <- cbind(dummy1, dummy2)
-
-#  avalia o lag de selecao do 
-VARselect(y = y.ts,
-          lag.max = 15,
-          type = "const",
-          exogen = NULL)
-
-
-# Estima o var com dummies
-var_bic <- VAR(y = y.df,
-               lag.max = 15,
-               type = "const",
-               ic = c("SC"),
-               exogen = data.exo)
-
-# Exibe o resultado da estimacao
-summary(var_bic)
+# dummy1 <- as.numeric(dados_monpol2$dates >= "2001-03-01" & dados_monpol2$dates <= "2001-12-01")
+# dummy2 <- as.numeric(dados_monpol2$dates >= "1985-03-01" & dados_monpol2$dates <= "1985-12-01")
+# 
+# #  junta as dummies em uma matriz
+# data.exo <- cbind(dummy1, dummy2)
+# 
+# #  avalia o lag de selecao do 
+# VARselect(y = y.ts,
+#           lag.max = 15,
+#           type = "const",
+#           exogen = NULL)
+# 
+# 
+# # Estima o var com dummies
+# var_bic <- VAR(y = y.df,
+#                lag.max = 15,
+#                type = "const",
+#                ic = c("SC"),
+#                exogen = data.exo)
+# 
+# # Exibe o resultado da estimacao
+# summary(var_bic)
 
 # realiza os testes de estimacao do VAR 
 for(j in c(2, 4, 8, 12)){
