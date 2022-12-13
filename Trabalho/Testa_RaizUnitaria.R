@@ -70,23 +70,23 @@ Testa.RaizUnitaria <- function(dados, colunas=NULL,
     dados.ret[i, c("drift.tau2", "drift.phi1")] <- ADF.drift@teststat["statistic", c("tau2", "phi1")]
     dados.ret[i, c("none.tau1")] <- ADF.none@teststat["statistic", c("tau1")]
     
-    if(ADF.trend@teststat["statistic", "tau3"] < ADF.trend@cval["tau3", "5pct"]){
+    if(ADF.trend@teststat["statistic", "tau3"] < ADF.trend@cval["tau3", critical]){
       # se temos rejeicao da nula entao nao tem os unit root
       dados.ret[i, "Unit.Root"] <- FALSE
       dados.ret[i, "Criterio"] <- 1
     } else {
-      if(ADF.trend@teststat["statistic", "phi3"] < ADF.trend@cval["phi3", "5pct"]) {
+      if(ADF.trend@teststat["statistic", "phi3"] < ADF.trend@cval["phi3", critical]) {
         # aqui a trend nao é significante, entao devemos estimar o modelo drift
         
-        if(ADF.drift@teststat["statistic", "tau2"] < ADF.drift@cval["tau2", "5pct"]){
+        if(ADF.drift@teststat["statistic", "tau2"] < ADF.drift@cval["tau2", critical]){
           #  temos rejeicao da nula e com isso nao temos raiz unitária
           dados.ret[i, "Unit.Root"] <- FALSE
           dados.ret[i, "Criterio"] <- 2
         } else {
           # temos de testar a presenca de drift nao significante
-          if(ADF.drift@teststat["statistic", "phi1"] < ADF.drift@cval["phi1", "5pct"]){
+          if(ADF.drift@teststat["statistic", "phi1"] < ADF.drift@cval["phi1", critical]){
             # aqui nao temos drift, temos de estimar o modelo sem nada
-            if(ADF.none@teststat["statistic", "tau1"] < ADF.none@cval["tau1", "5pct"]){
+            if(ADF.none@teststat["statistic", "tau1"] < ADF.none@cval["tau1", critical]){
               #  temos rejeicao da nula e com isso nao temos raiz unitaria
               dados.ret[i, "Unit.Root"] <- FALSE
               dados.ret[i, "Criterio"] <- 3

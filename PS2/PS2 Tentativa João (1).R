@@ -18,9 +18,6 @@ library(vars)
 
 library(ggplot2)
 
-# Determina o diretorio de trabalho 
-setwd("C:/Users/João/Desktop/Doutorado Profissional/Macroeconometria")
-
 ######################################################################################################
 ####  EXERCÍCIO 1 - a) 
 #Calcule as séries de gastos gy e de receitas ty como percentagem do PIB e retire a sazonalidade da série. 
@@ -28,11 +25,25 @@ setwd("C:/Users/João/Desktop/Doutorado Profissional/Macroeconometria")
 ######################################################################################################
 
 
+# Resultado de receitas e gastos mensais.
+# 
+# Fonte(1): https://www.gov.br/tesouronacional/pt-br/estatisticas-fiscais-e-planejamento/resultado-do-tesouro-nacional-rtn
+
+
+# Fonte(2): http://www.ipeadata.gov.br/Default.aspx (PIB MENSAL)
+
+# Fonte(3): http://www.ipeadata.gov.br/Default.aspx (Inflaçao MENSAL - IPCA)
+
+# Fonte(2): http://www.ipeadata.gov.br/Default.aspx (PIB MENSAL)
+
+
 # Preparando os dados 
-tbl1 <- read_excel(path = "./Problem set 2/dados_fiscal.xlsx")
+tbl1 <- read_excel(path = "./PS2/dados_fiscal.xlsx")
 
 # Ajustar coluna de data
 tbl1$Data <- as.Date(tbl1$Data)
+
+tbl1 <- tbl1 %>% mutate(ty = RECEITA_LIQUIDA/PIB_NOMINAL, gy = DESPESA_TOTAL/PIB_NOMINAL)
 
 # Renomear as colunas
 colnames(tbl1) <- c("Data", "Receita", "Despesa", "PIB",  "ty",  "gy")
@@ -132,7 +143,7 @@ my_var = VAR(tbl.var[ , c(1,2)],
              exogen = tbl.var[ , c(-1, -2)],
              p=12)
 
-summary(my_var)var
+summary(my_var)
 
 plot(my_var)
 
