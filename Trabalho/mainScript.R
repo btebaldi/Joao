@@ -11,10 +11,11 @@ library(vars)
 library(cowplot)
 
 # 1) Buscar e preparar o banco de dados
-Dados.full <- read_excel("D:/Github/Joao/Trabalho/Dados.xlsx", 
+Dados.full <- read_excel("./Trabalho/Dados.xlsx", 
                          col_types = c("date", "numeric", "numeric", 
                                        "numeric", "numeric", "numeric", 
                                        "numeric", "numeric"))
+
 Dados.full$Data <-  as.Date(Dados.full$Data)
 
 Dados.full
@@ -80,8 +81,8 @@ ggsave(filename = sprintf("variaveis em nivel.png"), plot = g.all, units = "in",
 
 # Script do Teo para testar raiz unitaria
 # sa rotina so funciona com critical = "5pct" 
-source("D:/Github/Joao/Trabalho/Testa_RaizUnitaria.R")
-Dados %>% Testa.RaizUnitaria(N.lags = 12, InfoCriteria = "BIC", critical = "1pct")
+source("./Trabalho/Testa_RaizUnitaria.R")
+Dados %>% Testa.RaizUnitaria(N.lags = 12, InfoCriteria = "BIC", critical = "5pct")
 
 for(col in colnames(Dados)){
   
@@ -105,31 +106,15 @@ for(col in colnames(Dados)){
 Dados <- Dados %>%
   mutate(dt = t - lag(t),
          dg = g - lag(g),
-         selic = selic - lag(selic),
+         # selic = selic - lag(selic),
          dpib = pib - lag(pib)) %>%
   dplyr::select(data, dt, dg, dpib, inflacao, selic) %>%
   na.omit()
 
 # Verificando estacionariedade
-Dados %>% Testa.RaizUnitaria(N.lags = 12, InfoCriteria = "BIC", critical = "1pct")
+Dados %>% Testa.RaizUnitaria(N.lags = 12, InfoCriteria = "BIC", critical = "5pct")
 
 Dados <- Dados %>% dplyr::filter(data>="1999-01-01")
-
-# Contrucao das Dummies
-
-# 1: grafico t - quebra estrutural em 2010
-# 2: grafico g - quebra estrutural em 2015
-# 3 : Inflacao - quebra em 2002-11 ate 2003-01
-# 4 : Selic - quebra em 1999-01 ate 1999-03
-Dummies <- Dados %>%
-  dplyr::transmute(
-    # Dummy_1 = as.numeric(data >= as.Date("2010-01-01") & data <= as.Date("2010-10-01")),
-    # Dummy_2 = as.numeric(data >= as.Date("2015-01-01") & data <= as.Date("2015-10-01")),
-    # Dummy_3 = as.numeric(data >= as.Date("2002-11-01") & data <= as.Date("2003-01-01")),
-    # Dummy_4 = as.numeric(data >= as.Date("1999-01-01") & data <= as.Date("1999-03-01")),
-    Pandemia = as.numeric(data >= as.Date("2020-03-01") & data <= as.Date("2021-03-01")) ) %>% 
-  data.matrix() %>% 
-  ts(start = c(1999, 01), frequency = 12)
 
 
 # Transforma os dados em TS
@@ -141,11 +126,11 @@ Dados.ts <- Dados %>%
 
 # 2) Analise de sazonalidade (se necessario, caso contrario pulamos)
 seasMdl <- seasonal::seas(x = Dados.ts)
-outlier(seasMdl$dt)
-outlier(seasMdl$dg)
-outlier(seasMdl$dpib)
-outlier(seasMdl$inflacao)
-outlier(seasMdl$selic)
+# outlier(seasMdl$dt)
+# outlier(seasMdl$dg)
+# outlier(seasMdl$dpib)
+# outlier(seasMdl$inflacao)
+# outlier(seasMdl$selic)
 
 # identify(seasMdl$dt)
 
@@ -160,7 +145,12 @@ plot(Dados.filtro)
 # 7) Analise de choque fiscal e choque monetario
 
 
+# Contrucao das Dummies
 
+# 1: grafico t - quebra estrutural em 2010
+# 2: grafico g - quebra estrutural em 2015
+# 3 : Inflacao - quebra em 2002-11 ate 2003-01
+# 4 : Selic - quebra em 1999-01 ate 1999-03
 Dummies <- Dados %>%
   dplyr::transmute(
     Dummy_1 = as.numeric(data >= as.Date("2010-01-01") & data <= as.Date("2010-10-01")),
@@ -188,7 +178,7 @@ vars::VARselect(Dados.filtro,
 my_var = vars::VAR(Dados.filtro,
                    type = "const",
                    exogen = Dummies,
-                   p=3)
+                   p=5)
 
 # testamos com varios lags no VAR e o primeiro que comeca a retirar o efeito de
 # autocorrelacao 'e um lag 20. Como isso implica em uma perda consideravel de
@@ -200,9 +190,9 @@ summary(my_var)
 
 for(i in c(3,6,9,12)){
   # Fazendo teste para autocorrelação dos resíduos
-  # serial.test(my_var, lags.pt=6, type="PT.asymptotic")  # H0 = não há autocorrelação PT assintótico
+  # print(serial.test(my_var, lags.pt=i, type="PT.asymptotic"))  # H0 = não há autocorrelação PT assintótico
   # serial.test(my_var, lags.pt=6, type="PT.adjusted")    # teste Portmanteau ajustado
-  # serial.test(my_var, lags.bg=6, type="BG")
+  # print(serial.test(my_var, lags.bg=i, type="BG"))
   print(serial.test(my_var, lags.bg=i, type="ES"))
 }
 
@@ -238,7 +228,6 @@ my_irf <- vars::irf(x = my_var,
                     cumulative = TRUE,
                     n.ahead = 60)
 
-
 for (var in names(my_irf$irf)) {
   
   data_irf <- my_irf$irf[[var]] %>%
@@ -258,7 +247,7 @@ for (var in names(my_irf$irf)) {
     geom_line(aes(x=id, y = dt), data = data_lower, linetype = "dashed", colour = "red") +
     geom_line(aes(x=id, y = dt), data = data_upper, linetype = "dashed", colour = "red") + 
     geom_hline(yintercept = 0, colour = "black") +   
-    labs(title = sprintf("Respobse of dt to a shock in %s", var),
+    labs(title = sprintf("Response of dt to a shock in %s", var),
          x = NULL, y = NULL)
   
   g.dg <- ggplot() + 
@@ -266,7 +255,7 @@ for (var in names(my_irf$irf)) {
     geom_line(aes(x=id, y = dg), data = data_lower, linetype = "dashed", colour = "red") +
     geom_line(aes(x=id, y = dg), data = data_upper, linetype = "dashed", colour = "red") + 
     geom_hline(yintercept = 0, colour = "black") +   
-    labs(title = sprintf("Respobse of dg to a shock in %s", var),
+    labs(title = sprintf("Response of dg to a shock in %s", var),
          x = NULL, y = NULL)
   
   g.dpib <- ggplot() + 
@@ -274,7 +263,7 @@ for (var in names(my_irf$irf)) {
     geom_line(aes(x=id, y = dpib), data = data_lower, linetype = "dashed", colour = "red") +
     geom_line(aes(x=id, y = dpib), data = data_upper, linetype = "dashed", colour = "red") + 
     geom_hline(yintercept = 0, colour = "black") +   
-    labs(title = sprintf("Respobse of dpib to a shock in %s", var),
+    labs(title = sprintf("Response of dpib to a shock in %s", var),
          x = NULL, y = NULL)
   
   g.inflacao <- ggplot() + 
@@ -282,7 +271,7 @@ for (var in names(my_irf$irf)) {
     geom_line(aes(x=id, y = inflacao), data = data_lower, linetype = "dashed", colour = "red") +
     geom_line(aes(x=id, y = inflacao), data = data_upper, linetype = "dashed", colour = "red") + 
     geom_hline(yintercept = 0, colour = "black") +   
-    labs(title = sprintf("Respobse of inflacao to a shock in %s", var),
+    labs(title = sprintf("Response of inflacao to a shock in %s", var),
          x = NULL, y = NULL)
   
   g.selic <- ggplot() + 
@@ -290,7 +279,7 @@ for (var in names(my_irf$irf)) {
     geom_line(aes(x=id, y = selic), data = data_lower, linetype = "dashed", colour = "red") +
     geom_line(aes(x=id, y = selic), data = data_upper, linetype = "dashed", colour = "red") + 
     geom_hline(yintercept = 0, colour = "black") +   
-    labs(title = sprintf("Respobse of selic to a shock in %s", var),
+    labs(title = sprintf("Response of selic to a shock in %s", var),
          x = NULL, y = NULL)
   
   
@@ -302,10 +291,11 @@ for (var in names(my_irf$irf)) {
          dpi = 100)
 }
 
+# 
 # source(file = "./PS3/uhlig_reject.R")
 # 
 # # t         g      pib inflacao     selic
-# restricoes <- c(+2, +3)
+# restricoes <- c(+2, +4)
 # 
 # # vetor com o nomde das respostas
 # v1 = c("Response of t" ,
@@ -315,18 +305,18 @@ for (var in names(my_irf$irf)) {
 #        "Response of bf")
 # 
 # svar_sig_1 <- uhlig.reject(Y = Dados.filtro,
-#                            nlags = 4,
-#                            draws = 5000,
+#                            nlags = 12,
+#                            draws = 1000,
 #                            subdraws = 500,
-#                            nkeep = 1000, 
+#                            nkeep = 1000,
 #                            KMIN = 1,
 #                            KMAX = 6,
-#                            constrained = restricoes, 
-#                            constant = TRUE, 
+#                            constrained = restricoes,
+#                            constant = TRUE,
 #                            steps = 20)
 # 
 # 
-# irfplot(irfdraws = svar_sig_1$IRFS, 
+# irfplot(irfdraws = svar_sig_1$IRFS,
 #         type = "median",
 #         labels = v1,
 #         save = FALSE,
@@ -335,11 +325,11 @@ for (var in names(my_irf$irf)) {
 #         bw = FALSE)
 # 
 # 
-# 
-# 
-# 
-# 
-# 
-# 
-# 
+
+
+
+
+
+
+
 
