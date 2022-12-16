@@ -629,7 +629,7 @@ UhligAccept <- function(Q, first, last, constrained, impulses){#ok
 #'
 #' @examples
 #' irfplot(irfdraws=irfs0, type="mean", labels=vl, save=FALSE, bands=c(0.16, 0.84),grid=TRUE, bw=FALSE)
-irfplot <- function(irfdraws=NULL,type="median", labels=unlist(dimnames(irfdraws)[3]), save=FALSE, bands=c(0.16, 0.84), grid=TRUE, bw=FALSE){
+irfplot <- function(irfdraws=NULL,type="median", labels=unlist(dimnames(irfdraws)[3]), save=FALSE, bands=c(0.16, 0.84), grid=TRUE, bw=FALSE, fileName = "irf.eps"){
     #
     
     #--- SANITY CHECK ---#
@@ -690,7 +690,7 @@ irfplot <- function(irfdraws=NULL,type="median", labels=unlist(dimnames(irfdraws
         }
       }
       if(save==TRUE){
-        dev.copy(postscript,'irf.eps')
+        dev.copy(postscript, fileName)
         dev.off()
       }
     }else{
@@ -709,7 +709,7 @@ irfplot <- function(irfdraws=NULL,type="median", labels=unlist(dimnames(irfdraws
         
       }
       if(save==TRUE){
-        dev.copy(postscript,'irf.eps')
+        dev.copy(postscript, fileName)
         dev.off()
       }
       
