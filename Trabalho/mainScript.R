@@ -116,22 +116,6 @@ Dados %>% Testa.RaizUnitaria(N.lags = 12, InfoCriteria = "BIC", critical = "5pct
 
 Dados <- Dados %>% dplyr::filter(data>="1999-01-01")
 
-# Contrucao das Dummies
-
-# 1: grafico t - quebra estrutural em 2010
-# 2: grafico g - quebra estrutural em 2015
-# 3 : Inflacao - quebra em 2002-11 ate 2003-01
-# 4 : Selic - quebra em 1999-01 ate 1999-03
-Dummies <- Dados %>%
-  dplyr::transmute(
-    # Dummy_1 = as.numeric(data >= as.Date("2010-01-01") & data <= as.Date("2010-10-01")),
-    # Dummy_2 = as.numeric(data >= as.Date("2015-01-01") & data <= as.Date("2015-10-01")),
-    # Dummy_3 = as.numeric(data >= as.Date("2002-11-01") & data <= as.Date("2003-01-01")),
-    # Dummy_4 = as.numeric(data >= as.Date("1999-01-01") & data <= as.Date("1999-03-01")),
-    Pandemia = as.numeric(data >= as.Date("2020-03-01") & data <= as.Date("2021-03-01")) ) %>% 
-  data.matrix() %>% 
-  ts(start = c(1999, 01), frequency = 12)
-
 
 # Transforma os dados em TS
 Dados.ts <- Dados %>% 
