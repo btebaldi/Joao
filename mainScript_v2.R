@@ -15,7 +15,6 @@ Dados.full <- read_excel("./Trabalho/Dados.xlsx",
                          col_types = c("date", "numeric", "numeric", 
                                        "numeric", "numeric", "numeric", 
                                        "numeric", "numeric"))
-
 Dados.full$Data <-  as.Date(Dados.full$Data)
 
 Dados.full
@@ -30,7 +29,7 @@ Dados.full
 ipca_ref <- Dados.full$IPCA[Dados.full$Data == "2022-10-01"]
 
 #  construindo as vaiaveis em termos reais
-Dados <- Dados.full %>% 
+Dados.0 <- Dados.full %>% 
   dplyr::select(Data, T, G, PIB, IPCA, Selic) %>% 
   mutate(fator = IPCA/ipca_ref,
          t = log(T/fator),
@@ -40,22 +39,22 @@ Dados <- Dados.full %>%
          selic = Selic*12)
 
 # Selecioando a amostra
-Dados <- Dados %>% 
+Dados.0 <- Dados.0 %>% 
   dplyr::filter(Data >= "1998-12-01") %>% 
   dplyr::select(data=Data, t, g, pib, inflacao, selic)
 
 # estatisticas descritivas
-summary(Dados)
+summary(Dados.0)
 
 
 # graficos das series
-for(col in colnames(Dados)){
+for(col in colnames(Dados.0)){
   
   if(col == "data"){
     next()
   }
   
-  g1 <- Dados %>% dplyr::select(x=data, y=!!col) %>%
+  g1 <- Dados.0 %>% dplyr::select(x=data, y=!!col) %>%
     ggplot() +
     geom_line(aes(x=x, y=y)) +
     labs(title = col)
@@ -82,28 +81,28 @@ ggsave(filename = sprintf("variaveis em nivel.png"), plot = g.all, units = "in",
 # Script do Teo para testar raiz unitaria
 # sa rotina so funciona com critical = "5pct" 
 source("./Trabalho/Testa_RaizUnitaria.R")
-Dados %>% Testa.RaizUnitaria(N.lags = 12, InfoCriteria = "BIC", critical = "5pct")
+Dados.0 %>% Testa.RaizUnitaria(N.lags = 12, InfoCriteria = "BIC", critical = "5pct")
 
-for(col in colnames(Dados)){
+for(col in colnames(Dados.0)){
   
   if(col == "Data"){ next() }
   
   cat("---------------------------------------", "\n")  
   cat("Analise de raiz unitaria em:", col, "\n")
-  df <- urca::ur.df(y = Dados[[col]], type = "trend", lags = 12, selectlags = "BIC")
+  df <- urca::ur.df(y = Dados.0[[col]], type = "trend", lags = 12, selectlags = "BIC")
   print(df)
   
-  df <- urca::ur.df(y = Dados[[col]], type = "drift", lags = 12, selectlags = "BIC")
+  df <- urca::ur.df(y = Dados.0[[col]], type = "drift", lags = 12, selectlags = "BIC")
   print(df)
   
-  df <- urca::ur.df(y = Dados[[col]], type = "none", lags = 12, selectlags = "BIC")
+  df <- urca::ur.df(y = Dados.0[[col]], type = "none", lags = 12, selectlags = "BIC")
   print(df)
   
 }
 
 
 # Vamos estacionarizar as 
-Dados <- Dados %>%
+Dados <- Dados.0 %>%
   mutate(dt = t - lag(t),
          dg = g - lag(g),
          # selic = selic - lag(selic),
@@ -142,11 +141,11 @@ Dados.ts <- Dados %>%
 
 # 2) Analise de sazonalidade (se necessario, caso contrario pulamos)
 seasMdl <- seasonal::seas(x = Dados.ts)
-# outlier(seasMdl$dt)
-# outlier(seasMdl$dg)
-# outlier(seasMdl$dpib)
-# outlier(seasMdl$inflacao)
-# outlier(seasMdl$selic)
+outlier(seasMdl$dt)
+outlier(seasMdl$dg)
+outlier(seasMdl$dpib)
+outlier(seasMdl$inflacao)
+outlier(seasMdl$selic)
 
 # identify(seasMdl$dt)
 
@@ -161,12 +160,7 @@ plot(Dados.filtro)
 # 7) Analise de choque fiscal e choque monetario
 
 
-# Contrucao das Dummies
 
-# 1: grafico t - quebra estrutural em 2010
-# 2: grafico g - quebra estrutural em 2015
-# 3 : Inflacao - quebra em 2002-11 ate 2003-01
-# 4 : Selic - quebra em 1999-01 ate 1999-03
 Dummies <- Dados %>%
   dplyr::transmute(
     Dummy_1 = as.numeric(data >= as.Date("2010-01-01") & data <= as.Date("2010-10-01")),
@@ -206,9 +200,9 @@ summary(my_var)
 
 for(i in c(3,6,9,12)){
   # Fazendo teste para autocorrelação dos resíduos
-  # print(serial.test(my_var, lags.pt=i, type="PT.asymptotic"))  # H0 = não há autocorrelação PT assintótico
+  # serial.test(my_var, lags.pt=6, type="PT.asymptotic")  # H0 = não há autocorrelação PT assintótico
   # serial.test(my_var, lags.pt=6, type="PT.adjusted")    # teste Portmanteau ajustado
-  # print(serial.test(my_var, lags.bg=i, type="BG"))
+  # serial.test(my_var, lags.bg=6, type="BG")
   print(serial.test(my_var, lags.bg=i, type="ES"))
 }
 
@@ -242,7 +236,9 @@ my_irf <- vars::irf(x = my_var,
                     impulse = c("dt", "dg", "selic",  "inflacao"),
                     # response = c("dt", "dg", "dpib", "selic",  "inflacao"),
                     cumulative = TRUE,
+                    ortho = FALSE,
                     n.ahead = 60)
+
 
 for (var in names(my_irf$irf)) {
   
@@ -263,7 +259,7 @@ for (var in names(my_irf$irf)) {
     geom_line(aes(x=id, y = dt), data = data_lower, linetype = "dashed", colour = "red") +
     geom_line(aes(x=id, y = dt), data = data_upper, linetype = "dashed", colour = "red") + 
     geom_hline(yintercept = 0, colour = "black") +   
-    labs(title = sprintf("Response of dt to a shock in %s", var),
+    labs(title = sprintf("Respobse of dt to a shock in %s", var),
          x = NULL, y = NULL)
   
   g.dg <- ggplot() + 
@@ -271,7 +267,7 @@ for (var in names(my_irf$irf)) {
     geom_line(aes(x=id, y = dg), data = data_lower, linetype = "dashed", colour = "red") +
     geom_line(aes(x=id, y = dg), data = data_upper, linetype = "dashed", colour = "red") + 
     geom_hline(yintercept = 0, colour = "black") +   
-    labs(title = sprintf("Response of dg to a shock in %s", var),
+    labs(title = sprintf("Respobse of dg to a shock in %s", var),
          x = NULL, y = NULL)
   
   g.dpib <- ggplot() + 
@@ -279,7 +275,7 @@ for (var in names(my_irf$irf)) {
     geom_line(aes(x=id, y = dpib), data = data_lower, linetype = "dashed", colour = "red") +
     geom_line(aes(x=id, y = dpib), data = data_upper, linetype = "dashed", colour = "red") + 
     geom_hline(yintercept = 0, colour = "black") +   
-    labs(title = sprintf("Response of dpib to a shock in %s", var),
+    labs(title = sprintf("Respobse of dpib to a shock in %s", var),
          x = NULL, y = NULL)
   
   g.inflacao <- ggplot() + 
@@ -287,7 +283,7 @@ for (var in names(my_irf$irf)) {
     geom_line(aes(x=id, y = inflacao), data = data_lower, linetype = "dashed", colour = "red") +
     geom_line(aes(x=id, y = inflacao), data = data_upper, linetype = "dashed", colour = "red") + 
     geom_hline(yintercept = 0, colour = "black") +   
-    labs(title = sprintf("Response of inflacao to a shock in %s", var),
+    labs(title = sprintf("Respobse of inflacao to a shock in %s", var),
          x = NULL, y = NULL)
   
   g.selic <- ggplot() + 
@@ -295,7 +291,7 @@ for (var in names(my_irf$irf)) {
     geom_line(aes(x=id, y = selic), data = data_lower, linetype = "dashed", colour = "red") +
     geom_line(aes(x=id, y = selic), data = data_upper, linetype = "dashed", colour = "red") + 
     geom_hline(yintercept = 0, colour = "black") +   
-    labs(title = sprintf("Response of selic to a shock in %s", var),
+    labs(title = sprintf("Respobse of selic to a shock in %s", var),
          x = NULL, y = NULL)
   
   
@@ -307,45 +303,143 @@ for (var in names(my_irf$irf)) {
          dpi = 100)
 }
 
-# 
-# source(file = "./PS3/uhlig_reject.R")
-# 
-# # t         g      pib inflacao     selic
-# restricoes <- c(+2, +4)
-# 
-# # vetor com o nomde das respostas
-# v1 = c("Response of t" ,
-#        "Response of g",
-#        "Response of pib",
-#        "Response of pi",
-#        "Response of bf")
-# 
-# svar_sig_1 <- uhlig.reject(Y = Dados.filtro,
-#                            nlags = 12,
-#                            draws = 1000,
-#                            subdraws = 500,
-#                            nkeep = 1000,
-#                            KMIN = 1,
-#                            KMAX = 6,
-#                            constrained = restricoes,
-#                            constant = TRUE,
-#                            steps = 20)
-# 
-# 
-# irfplot(irfdraws = svar_sig_1$IRFS,
-#         type = "median",
-#         labels = v1,
-#         save = FALSE,
-#         bands = c(0.16, 0.84),
-#         grid = TRUE,
-#         bw = FALSE)
-# 
-# 
+source(file = "./PS3/uhlig_reject.R")
+
+
+Dados.filtro <- Dados.0 %>% 
+  dplyr::filter(data >= "1999-01-01") %>%
+  dplyr::select(-data) %>%
+  data.matrix() %>% 
+  ts(start = c(1999, 01), frequency = 12)
+
+# vetor com o nomde das respostas
+v1 = c("Response of t" ,
+       "Response of g",
+       "Response of pib",
+       "Response of inflacao",
+       "Response of selic")
+
+# Uhlig 1o choque ---------------------------------------------------------
+
+# t g pib inflacao selic
+restricoes <- c(+1, +2)
+svar_sig_1 <- uhlig.reject(Y = Dados.filtro,
+                           nlags = 5,
+                           draws = 5000,
+                           subdraws = 500,
+                           nkeep = 1000,
+                           KMIN = 1,
+                           KMAX = 6,
+                           constrained = restricoes,
+                           constant = TRUE,
+                           steps = 20)
+
+irfplot(irfdraws = svar_sig_1$IRFS,
+        type = "median",
+        labels = v1,
+        save = FALSE,
+        bands = c(0.16, 0.84),
+        grid = TRUE,
+        bw = FALSE)
+
+
+# Uhlig 2o choque ---------------------------------------------------------
+
+# t g pib inflacao selic
+restricoes <- c(+1, -3)
+svar_sig_1 <- uhlig.reject(Y = Dados.filtro,
+                           nlags = 5,
+                           draws = 5000,
+                           subdraws = 500,
+                           nkeep = 500,
+                           KMIN = 1,
+                           KMAX = 6,
+                           constrained = restricoes,
+                           constant = TRUE,
+                           steps = 20)
+
+irfplot(irfdraws = svar_sig_1$IRFS,
+        type = "median",
+        labels = v1,
+        save = FALSE,
+        bands = c(0.16, 0.84),
+        grid = TRUE,
+        bw = FALSE)
 
 
 
+# Uhlig 3o choque ---------------------------------------------------------
+
+# t g pib inflacao selic
+restricoes <- c(+5, -4)
+svar_sig_1 <- uhlig.reject(Y = Dados.filtro,
+                           nlags = 5,
+                           draws = 5000,
+                           subdraws = 500,
+                           nkeep = 1000,
+                           KMIN = 1,
+                           KMAX = 6,
+                           constrained = restricoes,
+                           constant = TRUE,
+                           steps = 20)
+
+irfplot(irfdraws = svar_sig_1$IRFS,
+        type = "median",
+        labels = v1,
+        save = FALSE,
+        bands = c(0.16, 0.84),
+        grid = TRUE,
+        bw = FALSE)
+
+
+# Uhlig 4o choque ---------------------------------------------------------
+
+# t g pib inflacao selic
+restricoes <- c(+2, +4)
+svar_sig_1 <- uhlig.reject(Y = Dados.filtro,
+                           nlags = 5,
+                           draws = 5000,
+                           subdraws = 500,
+                           nkeep = 1000,
+                           KMIN = 1,
+                           KMAX = 6,
+                           constrained = restricoes,
+                           constant = TRUE,
+                           steps = 20)
+
+irfplot(irfdraws = svar_sig_1$IRFS,
+        type = "median",
+        labels = v1,
+        save = FALSE,
+        bands = c(0.16, 0.84),
+        grid = TRUE,
+        bw = FALSE)
 
 
 
+# Uhlig 5o choque ---------------------------------------------------------
+
+# t g pib inflacao selic
+restricoes <- c(+2, +3, +4)
+svar_sig_1 <- uhlig.reject(Y = Dados.filtro,
+                           nlags = 5,
+                           draws = 5000,
+                           subdraws = 500,
+                           nkeep = 1000,
+                           KMIN = 1,
+                           KMAX = 6,
+                           constrained = restricoes,
+                           constant = TRUE,
+                           steps = 20)
+
+irfplot(irfdraws = svar_sig_1$IRFS,
+        type = "median",
+        labels = v1,
+        save = FALSE,
+        bands = c(0.16, 0.84),
+        grid = TRUE,
+        bw = FALSE)
 
 
+
+str()
