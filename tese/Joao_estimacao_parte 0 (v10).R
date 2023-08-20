@@ -48,6 +48,23 @@ tbl_classificacao <- read_excel(here::here("./tese/economatica base setores.xlsx
 tbl_classificacao <- tbl_classificacao %>% select(Codigo, Setor_Economico_Bovespa, Subsetor_Bovespa) %>%
   mutate(Ticker_bbg = sprintf("%s BS Equity", Codigo))
 
+# Carrega base com informacao de Sharpe
+base_Sharpe <- read_excel(here::here("tese/economatica_Sharpe.xlsx"), range = "A5:AD554", na = c("-"))
+
+base_Sharpe <- base_Sharpe %>% 
+  mutate(Ticker_bbg = sprintf("%s BS Equity", Ticker)) %>% 
+  select(Ticker_bbg, starts_with("Sharpe_")) %>% 
+  pivot_longer(cols = starts_with("Sharpe"),
+               names_to = "Ano",
+               names_prefix = "Sharpe_",
+               names_transform = as.numeric,
+               values_to = "Sharpe")
+
+# Atualzia banco de dados com o sharpe
+tbl <- tbl %>%
+  left_join(base_Sharpe, by = c("Ação" = "Ticker_bbg", "Ano"="Ano"))
+
+
 # Carrega base com informacao de DRE
 base_DRE <- read_excel(here::here("tese/economatica base DRE.xlsx"), range = "A2:AD552", na = c("-"))
 
@@ -76,7 +93,7 @@ NEFIN_Factores <- NEFIN_Factores %>%
          min_date = min(date),
          max_date = max(date)) %>% 
   filter(date == max_date) %>% 
-  select(year, Idx_SMB, Idx_WML, Idx_IML, Idx_HML)
+  select(year, Idx_SMB, Idx_WML, Idx_IML, Idx_HML, Idx_Rm_minus_Rf)
 
 # Data regularization -----------------------------------------------------
 
@@ -238,6 +255,7 @@ corr <- tbl %>%
          "Risk Premium" ="Risk_Premium",
          # "Last_Price",
          "ESG_Score"="BESG_ESG_Score",
+         "Sharpe"="Sharpe",
          "Beta" = "Beta_winsorized") %>% 
   cor(use = "pairwise.complete.obs")
 
@@ -273,6 +291,9 @@ tbl$SMB = NA
 tbl$WML = NA
 tbl$IML = NA
 tbl$HML = NA
+tbl$HML = NA
+tbl$Rm_minus_Rf = NA
+
 
 for(i in 1:nrow(tbl)){
   # na primeira linha nao temos passado. Colocar NA
@@ -283,6 +304,7 @@ for(i in 1:nrow(tbl)){
     tbl$WML[i] = NA
     tbl$IML[i] = NA
     tbl$HML[i] = NA
+    tbl$Rm_minus_Rf[i] = NA
     
   } else {
     if(tbl$Acao[i] == tbl$Acao[i-1]){
@@ -291,7 +313,9 @@ for(i in 1:nrow(tbl)){
       tbl$SMB[i] = tbl$Idx_SMB[i] - tbl$Idx_SMB[i-1]
       tbl$WML[i] = tbl$Idx_WML[i] - tbl$Idx_WML[i-1]
       tbl$IML[i] = tbl$Idx_IML[i] - tbl$Idx_IML[i-1]
-      tbl$HML[i] = tbl$Idx_HML[i] - tbl$Idx_HML[i-1]  
+      tbl$HML[i] = tbl$Idx_HML[i] - tbl$Idx_HML[i-1]
+      tbl$Rm_minus_Rf[i] = tbl$Idx_Rm_minus_Rf[i] - tbl$Idx_Rm_minus_Rf[i-1]  
+      
     } else{
       tbl$d.ln_price[i] = NA
       
@@ -299,6 +323,7 @@ for(i in 1:nrow(tbl)){
       tbl$WML[i] = NA
       tbl$IML[i] = NA
       tbl$HML[i] = NA
+      tbl$Rm_minus_Rf[i] = NA
     }
   }
 }
@@ -330,6 +355,7 @@ tbl[ , "LAG_Applied_Beta_for_EQRP"] = NA
 tbl[ , "LAG_Last_Price"] = NA
 tbl[ , "LAG_VWAP_(Standar_Deviation)"] = NA
 tbl[ , "LAG_Beta_winsorized"] = NA
+tbl[ , "LAG_Sharpe"] = NA
 
 tbl[ , "LAG_ESG_Disclosure_Score"] = NA
 tbl[ , "LAG_Environmental_Disclosure_Score"] = NA
@@ -367,6 +393,7 @@ for(i in 1:nrow(tbl)){
       tbl[i, "LAG_Last_Price"] = tbl[i-1, "Last_Price"]
       tbl[i, "LAG_VWAP_(Standar_D-1eviation)"] = tbl[i, "VWAP_(Standar_Deviation)"]
       tbl[i, "LAG_Beta_winsorized"] = tbl[i-1, "Beta_winsorized"]
+      tbl[i, "LAG_Sharpe"] = tbl[i-1, "Sharpe"]
       
       tbl[i, "LAG_ESG_Disclosure_Score"] = tbl[i-1, "ESG_Disclosure_Score"]
       tbl[i, "LAG_Environmental_Disclosure_Score"] = tbl[i-1, "Environmental_Disclosure_Score"]

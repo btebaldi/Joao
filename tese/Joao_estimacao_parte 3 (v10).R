@@ -82,18 +82,34 @@ summary(fixed)
 
 # Analise de Risk_Premium vs Score ----------------------------------------
 
-f <- formula(paste("Risk_Premium ~ BESG_ESG_Score + LAG_BESG_ESG_Score + SMB + WML + IML + HML"))
+f <- formula(paste("Risk_Premium ~ BESG_ESG_Score + LAG_BESG_ESG_Score + SMB + WML + IML + HML + Rm_minus_Rf"))
 
 # Efeitos fixos
 fixed <- plm(formula = f, data = tbl, index = c("Acao", "Ano"), model="within")
 summary(fixed)
-colnames(tbl)
+
 # Analise de Risk_Premium vs Disclosure -----------------------------------
 
-f <- formula(paste("Risk_Premium ~ ESG_Disclosure_Score + LAG_ESG_Disclosure_Score + SMB + WML + IML + HML"))
+f <- formula(paste("Risk_Premium ~ ESG_Disclosure_Score + LAG_ESG_Disclosure_Score + SMB + WML + IML + HML + Rm_minus_Rf"))
 
 # Efeitos fixos
 fixed <- plm(formula = f, data = tbl, index = c("Acao", "Ano"), model="within")
 summary(fixed)
 
+
+# Analise de Sharpe vs Score ----------------------------------------------
+
+f <- formula(paste("Sharpe ~ BESG_ESG_Score + LAG_BESG_ESG_Score + SMB + WML + IML + HML + Rm_minus_Rf"))
+
+# Efeitos fixos
+fixed <- plm(formula = f, data = tbl, index = c("Acao", "Ano"), model="within")
+summary(fixed)
+
+# Analise de Sharpe vs Disclorure -----------------------------------------
+
+f <- formula(paste("Sharpe ~ ESG_Disclosure_Score + LAG_ESG_Disclosure_Score + SMB + WML + IML + HML + Rm_minus_Rf"))
+
+# Efeitos fixos
+fixed <- plm(formula = f, data = tbl, index = c("Acao", "Ano"), model="within")
+summary(fixed)
 

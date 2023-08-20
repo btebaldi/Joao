@@ -299,23 +299,17 @@ overflow-y: auto;
 border: 1px solid #ddd;
 border-radius: 4px;
 }
-.tabset-dropdown > .nav-tabs > li.active:before {
-content: "";
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+content: "\e259";
 font-family: 'Glyphicons Halflings';
 display: inline-block;
 padding: 10px;
 border-right: 1px solid #ddd;
 }
 .tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
-content: "";
-border: none;
-}
-.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
-content: "";
+content: "\e258";
 font-family: 'Glyphicons Halflings';
-display: inline-block;
-padding: 10px;
-border-right: 1px solid #ddd;
+border: none;
 }
 .tabset-dropdown > .nav-tabs > li.active {
 display: block;
@@ -606,7 +600,7 @@ summary(fixed)</code></pre>
 ## F-statistic: 5.83353 on 12 and 510 DF, p-value: 1.6125e-09</code></pre>
 <pre class="r"><code># Analise de Risk_Premium vs Score ----------------------------------------
 
-f &lt;- formula(paste(&quot;Risk_Premium ~ BESG_ESG_Score + LAG_BESG_ESG_Score + SMB + WML + IML + HML&quot;))
+f &lt;- formula(paste(&quot;Risk_Premium ~ BESG_ESG_Score + LAG_BESG_ESG_Score + SMB + WML + IML + HML + Rm_minus_Rf&quot;))
 
 # Efeitos fixos
 fixed &lt;- plm(formula = f, data = tbl, index = c(&quot;Acao&quot;, &quot;Ano&quot;), model=&quot;within&quot;)
@@ -620,100 +614,29 @@ summary(fixed)</code></pre>
 ## Unbalanced Panel: n = 58, T = 1-7, N = 370
 ## 
 ## Residuals:
-##     Min.  1st Qu.   Median  3rd Qu.     Max. 
-## -5.24282 -1.42783 -0.35641  0.83113  8.19247 
+##      Min.   1st Qu.    Median   3rd Qu.      Max. 
+## -5.374945 -0.738716 -0.052002  0.675049  8.593426 
 ## 
 ## Coefficients:
-##                       Estimate  Std. Error t-value  Pr(&gt;|t|)    
-## BESG_ESG_Score      7.0336e-01  3.3818e-01  2.0798 0.0383747 *  
-## LAG_BESG_ESG_Score  1.9339e-02  3.2570e-01  0.0594 0.9526914    
-## SMB                -2.1489e-02  3.2888e-03 -6.5339 2.673e-10 ***
-## WML                 3.0217e-04  9.0458e-05  3.3404 0.0009402 ***
-## IML                 1.2186e-02  2.1655e-03  5.6272 4.140e-08 ***
-## HML                 1.7272e-03  4.8157e-04  3.5867 0.0003898 ***
+##                       Estimate  Std. Error  t-value  Pr(&gt;|t|)    
+## BESG_ESG_Score      4.1339e-01  2.1474e-01   1.9251   0.05514 .  
+## LAG_BESG_ESG_Score -5.5369e-01  2.0813e-01  -2.6603   0.00822 ** 
+## SMB                -3.1130e-02  2.1324e-03 -14.5987 &lt; 2.2e-16 ***
+## WML                -4.2590e-04  6.6677e-05  -6.3875 6.286e-10 ***
+## IML                 2.4487e-02  1.4881e-03  16.4559 &lt; 2.2e-16 ***
+## HML                 5.9283e-04  3.0975e-04   1.9139   0.05657 .  
+## Rm_minus_Rf        -1.4338e-02  6.7071e-04 -21.3776 &lt; 2.2e-16 ***
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 ## 
 ## Total Sum of Squares:    3994.4
-## Residual Sum of Squares: 1737.4
-## R-Squared:      0.56505
-## Adj. R-Squared: 0.47551
-## F-statistic: 66.256 on 6 and 306 DF, p-value: &lt; 2.22e-16</code></pre>
-<pre class="r"><code>colnames(tbl)</code></pre>
-<pre><code>##  [1] &quot;Acao&quot;                                  
-##  [2] &quot;Ano&quot;                                   
-##  [3] &quot;Trailing_12M_EBITDA_Margin&quot;            
-##  [4] &quot;Cap_Expend_to_Tot_Assets&quot;              
-##  [5] &quot;Return_on_Invested_Capital&quot;            
-##  [6] &quot;Tobin_s_Q_Ratio&quot;                       
-##  [7] &quot;Total_Assets&quot;                          
-##  [8] &quot;Total_Debt_to_Total_Assets&quot;            
-##  [9] &quot;Normalized_Net_Income_Growth&quot;          
-## [10] &quot;Long_Term_Assets_as___Total_Assets&quot;    
-## [11] &quot;ESG_Disclosure_Score&quot;                  
-## [12] &quot;Environmental_Disclosure_Score&quot;        
-## [13] &quot;Governance_Disclosure_Score&quot;           
-## [14] &quot;Social_Disclosure_Score&quot;               
-## [15] &quot;EBIT&quot;                                  
-## [16] &quot;Revenue_Growth_Year_over_Year&quot;         
-## [17] &quot;Revenue_Adjusted&quot;                      
-## [18] &quot;Number_Of_Trades&quot;                      
-## [19] &quot;Volatility_360_Day&quot;                    
-## [20] &quot;Risk_Premium&quot;                          
-## [21] &quot;Applied_Beta_for_EQRP&quot;                 
-## [22] &quot;Last_Price&quot;                            
-## [23] &quot;VWAP_(Standar_Deviation)&quot;              
-## [24] &quot;BESG_ESG_Score&quot;                        
-## [25] &quot;BESG_Environmental_Pillar_Score&quot;       
-## [26] &quot;BESG_Governance_Pillar_Score&quot;          
-## [27] &quot;BESG_Social_Pillar_Score&quot;              
-## [28] &quot;BESG_Environmental_Pillar_Weight&quot;      
-## [29] &quot;BESG_Governance_Pillar_Weight&quot;         
-## [30] &quot;BESG_Social_Pillar_Weight&quot;             
-## [31] &quot;is_Financial_Distress&quot;                 
-## [32] &quot;Codigo&quot;                                
-## [33] &quot;Setor_Economico_Bovespa&quot;               
-## [34] &quot;Subsetor_Bovespa&quot;                      
-## [35] &quot;Idx_SMB&quot;                               
-## [36] &quot;Idx_WML&quot;                               
-## [37] &quot;Idx_IML&quot;                               
-## [38] &quot;Idx_HML&quot;                               
-## [39] &quot;Beta_winsorized&quot;                       
-## [40] &quot;d.ln_price&quot;                            
-## [41] &quot;SMB&quot;                                   
-## [42] &quot;WML&quot;                                   
-## [43] &quot;IML&quot;                                   
-## [44] &quot;HML&quot;                                   
-## [45] &quot;LAG_Trailing_12M_EBITDA_Margin&quot;        
-## [46] &quot;LAG_Cap_Expend_to_Tot_Assets&quot;          
-## [47] &quot;LAG_Return_on_Invested_Capital&quot;        
-## [48] &quot;LAG_Tobin_s_Q_Ratio&quot;                   
-## [49] &quot;LAG_Total_Assets&quot;                      
-## [50] &quot;LAG_Total_Debt_to_Total_Assets&quot;        
-## [51] &quot;LAG_Normalized_Net_Income_Growth&quot;      
-## [52] &quot;LAG_Long_Term_Assets_as___Total_Assets&quot;
-## [53] &quot;LAG_EBIT&quot;                              
-## [54] &quot;LAG_Revenue_Growth_Year_over_Year&quot;     
-## [55] &quot;LAG_Revenue_Adjusted&quot;                  
-## [56] &quot;LAG_Number_Of_Trades&quot;                  
-## [57] &quot;LAG_Volatility_360_Day&quot;                
-## [58] &quot;LAG_Risk_Premium&quot;                      
-## [59] &quot;LAG_Applied_Beta_for_EQRP&quot;             
-## [60] &quot;LAG_Last_Price&quot;                        
-## [61] &quot;LAG_VWAP_(Standar_Deviation)&quot;          
-## [62] &quot;LAG_Beta_winsorized&quot;                   
-## [63] &quot;LAG_ESG_Disclosure_Score&quot;              
-## [64] &quot;LAG_Environmental_Disclosure_Score&quot;    
-## [65] &quot;LAG_Governance_Disclosure_Score&quot;       
-## [66] &quot;LAG_Social_Disclosure_Score&quot;           
-## [67] &quot;LAG_BESG_ESG_Score&quot;                    
-## [68] &quot;LAG_BESG_Environmental_Pillar_Score&quot;   
-## [69] &quot;LAG_BESG_Governance_Pillar_Score&quot;      
-## [70] &quot;LAG_BESG_Social_Pillar_Score&quot;          
-## [71] &quot;LAG_VWAP_(Standar_D-1eviation)&quot;</code></pre>
+## Residual Sum of Squares: 695.4
+## R-Squared:      0.82591
+## Adj. R-Squared: 0.78938
+## F-statistic: 206.706 on 7 and 305 DF, p-value: &lt; 2.22e-16</code></pre>
 <pre class="r"><code># Analise de Risk_Premium vs Disclosure -----------------------------------
 
-f &lt;- formula(paste(&quot;Risk_Premium ~ ESG_Disclosure_Score + LAG_ESG_Disclosure_Score + SMB + WML + IML + HML&quot;))
+f &lt;- formula(paste(&quot;Risk_Premium ~ ESG_Disclosure_Score + LAG_ESG_Disclosure_Score + SMB + WML + IML + HML + Rm_minus_Rf&quot;))
 
 # Efeitos fixos
 fixed &lt;- plm(formula = f, data = tbl, index = c(&quot;Acao&quot;, &quot;Ano&quot;), model=&quot;within&quot;)
@@ -727,25 +650,98 @@ summary(fixed)</code></pre>
 ## Unbalanced Panel: n = 75, T = 1-13, N = 789
 ## 
 ## Residuals:
-##      Min.   1st Qu.    Median   3rd Qu.      Max. 
-## -6.890032 -1.405579 -0.004892  1.285818  9.511807 
+##     Min.  1st Qu.   Median  3rd Qu.     Max. 
+## -6.84069 -1.45813  0.01805  1.43022  9.83558 
 ## 
 ## Coefficients:
 ##                             Estimate  Std. Error t-value  Pr(&gt;|t|)    
-## ESG_Disclosure_Score      4.5400e-02  2.4799e-02  1.8307   0.06756 .  
-## LAG_ESG_Disclosure_Score  5.5981e-02  2.3125e-02  2.4208   0.01574 *  
-## SMB                      -5.4057e-03  1.3395e-03 -4.0356 6.040e-05 ***
-## WML                       4.0932e-04  5.8293e-05  7.0217 5.149e-12 ***
-## IML                       5.6417e-03  1.2556e-03  4.4933 8.188e-06 ***
-## HML                       2.6322e-03  3.5901e-04  7.3317 6.226e-13 ***
+## ESG_Disclosure_Score      4.4738e-02  2.4100e-02  1.8563 0.0638226 .  
+## LAG_ESG_Disclosure_Score  7.9470e-02  2.2759e-02  3.4917 0.0005097 ***
+## SMB                      -4.0950e-03  1.3172e-03 -3.1090 0.0019528 ** 
+## WML                       2.1721e-04  6.3835e-05  3.4027 0.0007048 ***
+## IML                       6.3736e-03  1.2253e-03  5.2015 2.592e-07 ***
+## HML                       2.7843e-03  3.4967e-04  7.9624 6.735e-15 ***
+## Rm_minus_Rf              -5.2302e-03  8.0097e-04 -6.5298 1.258e-10 ***
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 ## 
 ## Total Sum of Squares:    8346.3
-## Residual Sum of Squares: 5085.7
-## R-Squared:      0.39067
-## Adj. R-Squared: 0.32181
-## F-statistic: 75.654 on 6 and 708 DF, p-value: &lt; 2.22e-16</code></pre>
+## Residual Sum of Squares: 4796.4
+## R-Squared:      0.42532
+## Adj. R-Squared: 0.35948
+## F-statistic: 74.7513 on 7 and 707 DF, p-value: &lt; 2.22e-16</code></pre>
+<pre class="r"><code># Analise de Sharpe vs Score ----------------------------------------------
+
+f &lt;- formula(paste(&quot;Sharpe ~ BESG_ESG_Score + LAG_BESG_ESG_Score + SMB + WML + IML + HML + Rm_minus_Rf&quot;))
+
+# Efeitos fixos
+fixed &lt;- plm(formula = f, data = tbl, index = c(&quot;Acao&quot;, &quot;Ano&quot;), model=&quot;within&quot;)
+summary(fixed)</code></pre>
+<pre><code>## Oneway (individual) effect Within Model
+## 
+## Call:
+## plm(formula = f, data = tbl, model = &quot;within&quot;, index = c(&quot;Acao&quot;, 
+##     &quot;Ano&quot;))
+## 
+## Unbalanced Panel: n = 58, T = 1-7, N = 359
+## 
+## Residuals:
+##     Min.  1st Qu.   Median  3rd Qu.     Max. 
+## -3.93290 -0.58254 -0.12460  0.50711  5.32747 
+## 
+## Coefficients:
+##                       Estimate  Std. Error t-value  Pr(&gt;|t|)    
+## BESG_ESG_Score      9.7266e-02  1.7226e-01  0.5646   0.57275    
+## LAG_BESG_ESG_Score -1.3972e-01  1.6703e-01 -0.8365   0.40354    
+## SMB                -2.3162e-03  1.7267e-03 -1.3414   0.18082    
+## WML                -7.9861e-05  5.3987e-05 -1.4793   0.14014    
+## IML                 2.4777e-03  1.2001e-03  2.0645   0.03985 *  
+## HML                -3.5915e-04  2.5007e-04 -1.4362   0.15201    
+## Rm_minus_Rf         2.6003e-03  5.3938e-04  4.8209 2.296e-06 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Total Sum of Squares:    558.21
+## Residual Sum of Squares: 422.39
+## R-Squared:      0.2433
+## Adj. R-Squared: 0.078581
+## F-statistic: 13.5044 on 7 and 294 DF, p-value: 3.9747e-15</code></pre>
+<pre class="r"><code># Analise de Sharpe vs Disclorure -----------------------------------------
+
+f &lt;- formula(paste(&quot;Sharpe ~ ESG_Disclosure_Score + LAG_ESG_Disclosure_Score + SMB + WML + IML + HML + Rm_minus_Rf&quot;))
+
+# Efeitos fixos
+fixed &lt;- plm(formula = f, data = tbl, index = c(&quot;Acao&quot;, &quot;Ano&quot;), model=&quot;within&quot;)
+summary(fixed)</code></pre>
+<pre><code>## Oneway (individual) effect Within Model
+## 
+## Call:
+## plm(formula = f, data = tbl, model = &quot;within&quot;, index = c(&quot;Acao&quot;, 
+##     &quot;Ano&quot;))
+## 
+## Unbalanced Panel: n = 75, T = 1-13, N = 741
+## 
+## Residuals:
+##     Min.  1st Qu.   Median  3rd Qu.     Max. 
+## -2.87529 -0.64116 -0.10881  0.53824  6.30860 
+## 
+## Coefficients:
+##                             Estimate  Std. Error t-value Pr(&gt;|t|)    
+## ESG_Disclosure_Score     -1.5875e-02  1.0958e-02 -1.4488  0.14788    
+## LAG_ESG_Disclosure_Score  1.9814e-04  1.0272e-02  0.0193  0.98462    
+## SMB                      -4.0447e-04  5.8270e-04 -0.6941  0.48785    
+## WML                       7.6649e-06  2.8128e-05  0.2725  0.78532    
+## IML                       9.9419e-04  5.3773e-04  1.8489  0.06493 .  
+## HML                      -1.7171e-04  1.5218e-04 -1.1283  0.25960    
+## Rm_minus_Rf               3.2586e-03  3.4909e-04  9.3345  &lt; 2e-16 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Total Sum of Squares:    1099.6
+## Residual Sum of Squares: 808.05
+## R-Squared:      0.26513
+## Adj. R-Squared: 0.17481
+## F-statistic: 33.9659 on 7 and 659 DF, p-value: &lt; 2.22e-16</code></pre>
 
 
 
