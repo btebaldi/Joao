@@ -13,7 +13,7 @@ library(DescTools)
 # Data load ---------------------------------------------------------------
 
 #  leitura da base de dados
-tbl <- read_excel("./tese/TabelaFinal 1406 corrigido.xlsx", sheet = "Sheet 1")
+tbl <- read_excel("./tese/TabelaFinal 2707.xlsx", sheet = "Sheet 1")
 
 
 tbl %>% 
@@ -34,23 +34,24 @@ d.ln <- function(x) { return(log(x)-lag(log(x)))}
 
 tbl
 
-tbl_classificacao <- read_excel("tese/Relacao de classificacao.xlsx")
+tbl_classificacao <- read_excel("C:/Users/bteba/Downloads/economatica base1.xlsx")
+
+colnames(tbl_classificacao)
+
 
 # cria ticker bbg
-tbl_classificacao <- tbl_classificacao %>% mutate(Ticker_bbg = sprintf("%s BS Equity", Ticker))
+tbl_classificacao <- tbl_classificacao %>% select(Codigo, Setor_Economico_Bovespa, Subsetor_Bovespa) %>%
+  mutate(Ticker_bbg = sprintf("%s BS Equity", Codigo))
 
-
+unique(tbl_classificacao$Setor_Economico_Bovespa)
+unique(tbl_classificacao$Subsetor_Bovespa)
 # Data regularization -----------------------------------------------------
 
 
 # # exclusao de empresas do setor financeiro
-# tbl <- tbl %>% 
-#   inner_join(tbl_classificacao, by = c("Ação" = "Ticker_bbg")) %>% 
-#   filter(!(Setor_Economatica %in% c("Finanças e Seguros")))
-
-
-# # exclusao de Ano anterior a 2008
-# tbl <- tbl %>% filter(Ano >= 2008)
+tbl <- tbl %>%
+  inner_join(tbl_classificacao, by = c("Ação" = "Ticker_bbg")) %>%
+  filter(!(Subsetor_Bovespa %in% c("Intermediários financeiros")))
 
 # shortcut <- (alt -)
 # filtra os dados com o ano atual
@@ -76,6 +77,17 @@ tbl <- tbl %>% mutate_at(.vars = c("Total_Assets", "Number_Of_Trades"), .funs = 
 
 # Filtrando a base para anos posteriores a 2008 (inclusive)
 tbl <- tbl %>% filter(Ano >= 2009)
+
+
+
+# Analise de distribuicao de empresas por ano -----------------------------
+
+tbl %>% 
+  group_by(Ano) %>% 
+  summarise(Cont_empresas = n(),
+            Cont_Score = sum(!is.na(BESG_ESG_Score)),
+            Cont_Disclosure = sum(!is.na(ESG_Disclosure_Score))) %>% 
+  arrange(Cont_empresas)
 
 
 # REMOCAO DE OUTLIERS ( Winsorização) -----------------------------------------------------
@@ -168,7 +180,8 @@ summary(tbl)
 # tbl <- tbl %>% filter(!(Acao == "VALE3 BS Equity" & Ano == 2015))
 
 
-
+x11()
+plot(tbl)
 # Calculo do d.ln(last_price) ---------------------------------------------
 
 # arrumo a tabela para ficar na ordem de acao e ano
@@ -283,6 +296,8 @@ tbl %>%
   arrange(-n) %>% print(n=10)
 
 
+
+
 # Analise de determinantes de BESG_ESG_Score ------------------------------------------------
 
 regressores <- "Trailing_12M_EBITDA_Margin + 
@@ -296,6 +311,20 @@ regressores <- "Trailing_12M_EBITDA_Margin +
   Number_Of_Trades +
   Long_Term_Assets_as___Total_Assets +
   Volatility_360_Day" 
+
+
+
+regressores_LAG <- "LAG_Trailing_12M_EBITDA_Margin + 
+  LAG_Cap_Expend_to_Tot_Assets + 
+  LAG_Return_on_Invested_Capital +
+  LAG_Tobin_s_Q_Ratio +
+  LAG_Total_Assets +
+  LAG_Total_Debt_to_Total_Assets +
+  LAG_Normalized_Net_Income_Growth +
+  LAG_Revenue_Growth_Year_over_Year +
+  LAG_Number_Of_Trades +
+  LAG_Long_Term_Assets_as___Total_Assets +
+  LAG_Volatility_360_Day" 
 
 
 f <- formula(paste("BESG_ESG_Score ~", regressores))
@@ -386,91 +415,102 @@ summary(fixed)
 
 #phtest(fixed, random)
 
-#############################################################################################
+
+
+# SCORE EM LAG ----------------------------------------------------------
+
+f <- formula(paste("BESG_ESG_Score ~", regressores_LAG))
+# Efeitos fixos
+fixed <- plm(formula = f, data = tbl, index = c("Acao", "Ano"), model="within")
+summary(fixed)
+
+
+f <- formula(paste("BESG_Environmental_Pillar_Score ~", regressores_LAG))
+# Efeitos fixos
+fixed <- plm(formula = f, data = tbl, index = c("Acao", "Ano"), model="within")
+summary(fixed)
+
+
+f <- formula(paste("BESG_Social_Pillar_Score ~", regressores_LAG))
+# Efeitos fixos
+fixed <- plm(formula = f, data = tbl, index = c("Acao", "Ano"), model="within")
+summary(fixed)
+
+
+f <- formula(paste("BESG_Governance_Pillar_Score ~", regressores_LAG))
+# Efeitos fixos
+fixed <- plm(formula = f, data = tbl, index = c("Acao", "Ano"), model="within")
+summary(fixed)
+
+
+
+
 # Analise de determinantes de ESG Disclosure Score ------------------------------------------------------
 
 f <- formula(paste("ESG_Disclosure_Score ~", regressores))
 
 # Efeitos fixos
-fixed <- plm(formula = f,
-             data = tbl,
-             index = c("Acao", "Ano"),
-             model="within")
+fixed <- plm(formula = f, data = tbl, index = c("Acao", "Ano"), model="within")
 summary(fixed)
 
 # Efeitos aleatórios
-
-#random <- plm(formula = f,
-#             data = tbl,
-#             index = c("Acao", "Ano"),
-#              model="random")
+#random <- plm(formula = f, data = tbl, index = c("Acao", "Ano"), model="random")
 #summary(random)
-
-
+#
 #phtest(fixed, random)
 
 # Determinantes do score Ambiental 
-
 f <- formula(paste("Environmental_Disclosure_Score ~", regressores))
-
 # Efeitos fixos
-
-fixed <- plm(formula = f,
-             data = tbl,
-             index = c("Acao", "Ano"),
-             model="within")
-
+fixed <- plm(formula = f, data = tbl, index = c("Acao", "Ano"), model="within")
 summary(fixed)
 
-# Efeitos aleatórios
-
-#random <- plm(formula = f,
-#              data = tbl,
-#             index = c("Acao", "Ano"),
-#              model="random")
-#summary(random)
-
-#phtest(fixed, random)
 
 # Determinantes do score Social
-
 f <- formula(paste("Social_Disclosure_Score ~", regressores))
 # Efeitos fixos
 
-fixed <- plm(formula = f,
-             data = tbl,
-             index = c("Acao", "Ano"),
-             model="within")
+fixed <- plm(formula = f, data = tbl, index = c("Acao", "Ano"), model="within")
 summary(fixed)
 
-# Efeitos aleatórios
-
-#random <- plm(formula = f,
-#              data = tbl,
-#              index = c("Acao", "Ano"),
-#              model="random")
-#summary(random)
-
 # Determinantes do score de Governança 
-
 f <- formula(paste("Governance_Disclosure_Score ~", regressores))
 
 # Efeitos fixos
-
-fixed <- plm(formula = f,
-             data = tbl,
-             index = c("Acao", "Ano"),
-             model="within")
+fixed <- plm(formula = f, data = tbl, index = c("Acao", "Ano"), model="within")
 summary(fixed)
 
-# Efeitos aleatórios
 
-#random <- plm(formula = f,
-#              data = tbl,
-#              index = c("Acao", "Ano"),
-#              model="random")
-#summary(random)
 
+# Disclosure Score EM LAG ----------------------------------------------------------
+
+f <- formula(paste("ESG_Disclosure_Score ~", regressores_LAG))
+
+# Efeitos fixos
+fixed <- plm(formula = f, data = tbl, index = c("Acao", "Ano"), model="within")
+summary(fixed)
+
+
+# Determinantes do score Ambiental 
+f <- formula(paste("Environmental_Disclosure_Score ~", regressores_LAG))
+# Efeitos fixos
+fixed <- plm(formula = f, data = tbl, index = c("Acao", "Ano"), model="within")
+summary(fixed)
+
+
+# Determinantes do score Social
+f <- formula(paste("Social_Disclosure_Score ~", regressores_LAG))
+# Efeitos fixos
+
+fixed <- plm(formula = f, data = tbl, index = c("Acao", "Ano"), model="within")
+summary(fixed)
+
+# Determinantes do score de Governança 
+f <- formula(paste("Governance_Disclosure_Score ~", regressores_LAG))
+
+# Efeitos fixos
+fixed <- plm(formula = f, data = tbl, index = c("Acao", "Ano"), model="within")
+summary(fixed)
 
 ######################################################################################
 ######################################################################################
@@ -481,7 +521,9 @@ summary(fixed)
 f <- formula("Tobin_s_Q_Ratio ~
   Trailing_12M_EBITDA_Margin + 
   Cap_Expend_to_Tot_Assets + 
-  Return_on_Invested_Capital + BESG_ESG_Score +
+  Return_on_Invested_Capital +
+  BESG_ESG_Score +
+  LAG_BESG_ESG_Score +
   Total_Assets +
   Total_Debt_to_Total_Assets +
   Normalized_Net_Income_Growth +
@@ -511,10 +553,7 @@ f <- formula("Tobin_s_Q_Ratio ~
   Long_Term_Assets_as___Total_Assets + Volatility_360_Day")
 # Efeitos fixos
 
-fixed <- plm(formula = f,
-             data = tbl,
-             index = c("Acao", "Ano"),
-             model="within")
+fixed <- plm(formula = f, data = tbl, index = c("Acao", "Ano"), model="within")
 summary(fixed)
 
 
@@ -613,19 +652,18 @@ f <- formula("d.ln_price  ~
   Cap_Expend_to_Tot_Assets + 
   Return_on_Invested_Capital +
   BESG_ESG_Score +
+  LAG_BESG_ESG_Score +
   Total_Assets +
   Total_Debt_to_Total_Assets +
   Normalized_Net_Income_Growth +
   Revenue_Growth_Year_over_Year +
   Number_Of_Trades +
-  Long_Term_Assets_as___Total_Assets + Tobin_s_Q_Ratio")
+  Long_Term_Assets_as___Total_Assets +
+  Tobin_s_Q_Ratio")
 
 # Efeitos fixos
 
-fixed <- plm(formula = f,
-             data = tbl,
-             index = c("Acao", "Ano"),
-             model="within")
+fixed <- plm(formula = f, data = tbl, index = c("Acao", "Ano"), model="within")
 summary(fixed)
 
 # Caso d.ln_price ~ Disclosure Score 
@@ -636,6 +674,7 @@ f <- formula("d.ln_price  ~
   Cap_Expend_to_Tot_Assets + 
   Return_on_Invested_Capital +
   ESG_Disclosure_Score +
+  LAG_ESG_Disclosure_Score +
   Total_Assets +
   Total_Debt_to_Total_Assets +
   Normalized_Net_Income_Growth +
@@ -645,11 +684,32 @@ f <- formula("d.ln_price  ~
 
 # Efeitos fixos
 
-fixed <- plm(formula = f,
-             data = tbl,
-             index = c("Acao", "Ano"),
-             model="within")
+fixed <- plm(formula = f, data = tbl, index = c("Acao", "Ano"), model="within")
 summary(fixed)
+
+
+f <- formula("Risk_Premium  ~ 
+  Trailing_12M_EBITDA_Margin + 
+  Cap_Expend_to_Tot_Assets + 
+  Return_on_Invested_Capital +
+  BESG_ESG_Score +
+  LAG_BESG_ESG_Score +
+  Total_Assets +
+  Total_Debt_to_Total_Assets +
+  Normalized_Net_Income_Growth +
+  Revenue_Growth_Year_over_Year +
+  Number_Of_Trades +
+  Long_Term_Assets_as___Total_Assets +
+  Tobin_s_Q_Ratio")
+
+# Efeitos fixos
+
+fixed <- plm(formula = f, data = tbl, index = c("Acao", "Ano"), model="within")
+summary(fixed)
+
+
+
+
 
 
 ##############################################################################
@@ -692,70 +752,6 @@ summary(fixed)
 
 # LAG - Analise de BESG_Environmental_Pillar_Score ------------------------------------------------
 
-f <- formula(paste("BESG_Environmental_Pillar_Score ~", regressores))
-
-# Efeitos fixos
-fixed <- plm(formula = f,
-             data = tbl,
-             index = c("Acao", "Ano"),
-             model="within")
-summary(fixed)
-
-# Efeitos aleatórios
-
-#random <- plm(formula = f,
-#              data = tbl,
-#              index = c("Acao", "Ano"),
-#              model="random")
-#summary(random)
-
-
-#phtest(fixed, random)
-
-
-# LAG - Analise de BESG_Social_Pillar_Score ------------------------------------------------
-
-f <- formula(paste("BESG_Social_Pillar_Score ~", regressores))
-
-# Efeitos fixos
-fixed <- plm(formula = f,
-             data = tbl,
-             index = c("Acao", "Ano"),
-             model="within")
-summary(fixed)
-
-# Efeitos aleatórios
-
-#random <- plm(formula = f,
-#             data = tbl,
-#              index = c("Acao", "Ano"),
-#              model="random")
-#summary(random)
-
-
-#phtest(fixed, random)
-
-# LAG - Analise de BESG_Governance_Pillar_Score ------------------------------------------------
-
-f <- formula(paste("BESG_Governance_Pillar_Score ~", regressores))
-
-# Efeitos fixos
-fixed <- plm(formula = f,
-             data = tbl,
-             index = c("Acao", "Ano"),
-             model="within")
-summary(fixed)
-
-# Efeitos aleatórios
-
-#random <- plm(formula = f,
-#              data = tbl,
-#              index = c("Acao", "Ano"),
-#             model="random")
-#summary(random)
-
-
-#phtest(fixed, random)
 
 
 #############################################################################################
