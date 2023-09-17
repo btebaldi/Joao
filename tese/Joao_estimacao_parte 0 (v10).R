@@ -100,7 +100,7 @@ NEFIN_Factores <- NEFIN_Factores %>%
 # # exclusao de empresas do setor financeiro
 tbl <- tbl %>%
   inner_join(tbl_classificacao, by = c("Ação" = "Ticker_bbg")) %>%
-  filter(!(Subsetor_Bovespa %in% c("Intermediários financeiros")))
+  filter(!(Subsetor_Bovespa %in% c("Intermediários financeiros", "Previdência e seguros", "Exploração de imóveis", "Serviços financeiros diversos")))
 
 # shortcut <- (alt -)
 # filtra os dados com o ano atual
