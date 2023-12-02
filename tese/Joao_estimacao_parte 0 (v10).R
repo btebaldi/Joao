@@ -1,6 +1,6 @@
-#' Author: Bruno Tebaldi de Queiroz Barbosa
+#' Author: JLTB
 #' 
-#' Data: 2023-07-27
+#' Data: 2023-11-24
 #' 
 #' Script que prepara a base para as regressoes dos capitulos 
 
@@ -23,7 +23,10 @@ library(tidyr)
 # Data load ---------------------------------------------------------------
 
 # Leitura da base de dados
+# tbl <- read_excel(here::here("C:/BACKUP/BACKUP_JOAO_BARROSO/USER/Desktop/Doutorado Profissional/Minha Tese  DPE ESG/TESE DPE/TabelaFinal 2807.xlsx"), sheet = "Sheet 1")
 tbl <- read_excel(here::here("./tese/TabelaFinal 2807.xlsx"), sheet = "Sheet 1")
+
+
 
 # Analise de Disclosure Score
 tbl %>% 
@@ -41,7 +44,9 @@ tbl %>%
 
 
 # Carrega base de configuracao de setor das empresas
+# tbl_classificacao <- read_excel(here::here("C:/BACKUP/BACKUP_JOAO_BARROSO/USER/Desktop/Doutorado Profissional/Minha Tese  DPE ESG/TESE DPE/economatica base setores.xlsx"))
 tbl_classificacao <- read_excel(here::here("./tese/economatica base setores.xlsx"))
+
 
 
 # cria ticker bbg na base de classificacao setorial
@@ -49,7 +54,9 @@ tbl_classificacao <- tbl_classificacao %>% select(Codigo, Setor_Economico_Bovesp
   mutate(Ticker_bbg = sprintf("%s BS Equity", Codigo))
 
 # Carrega base com informacao de Sharpe
-base_Sharpe <- read_excel(here::here("tese/economatica_Sharpe.xlsx"), range = "A5:AD554", na = c("-"))
+# base_Sharpe <- read_excel(here::here("C:/BACKUP/BACKUP_JOAO_BARROSO/USER/Desktop/Doutorado Profissional/Minha Tese  DPE ESG/TESE DPE/economatica_Sharpe.xlsx"), range = "A5:AD554", na = c("-"))
+base_Sharpe <- read_excel(here::here("./tese/economatica_Sharpe.xlsx"), range = "A5:AD554", na = c("-"))
+
 
 base_Sharpe <- base_Sharpe %>% 
   mutate(Ticker_bbg = sprintf("%s BS Equity", Ticker)) %>% 
@@ -66,7 +73,9 @@ tbl <- tbl %>%
 
 
 # Carrega base com informacao de DRE
-base_DRE <- read_excel(here::here("tese/economatica base DRE.xlsx"), range = "A2:AD552", na = c("-"))
+# base_DRE <- read_excel(here::here("C:/BACKUP/BACKUP_JOAO_BARROSO/USER/Desktop/Doutorado Profissional/Minha Tese  DPE ESG/TESE DPE/economatica base DRE.xlsx"), range = "A2:AD552", na = c("-"))
+base_DRE <- read_excel(here::here("./tese/economatica base DRE.xlsx"), range = "A2:AD552", na = c("-"))
+
 
 colnames(base_DRE)
 base_DRE <- base_DRE %>% 
@@ -85,7 +94,7 @@ tbl <- tbl %>%
   select(-PL)
 
 # Carrega dados de fatores
-NEFIN_Factores <- read_excel(here::here("tese/NEFIN_Factores.xlsx"))
+NEFIN_Factores <- read_excel(here::here("./tese/NEFIN_Factores.xlsx"))
 
 NEFIN_Factores <- NEFIN_Factores %>%
   group_by(year) %>% 
@@ -98,9 +107,16 @@ NEFIN_Factores <- NEFIN_Factores %>%
 # Data regularization -----------------------------------------------------
 
 # # exclusao de empresas do setor financeiro
+#tbl <- tbl %>%
+#  inner_join(tbl_classificacao, by = c("Ação" = "Ticker_bbg")) %>%
+#  filter(!(Subsetor_Bovespa %in% c("Intermediários financeiros")))
+
+# # exclusao de empresas do setor financeiro
 tbl <- tbl %>%
   inner_join(tbl_classificacao, by = c("Ação" = "Ticker_bbg")) %>%
   filter(!(Subsetor_Bovespa %in% c("Intermediários financeiros", "Previdência e seguros", "Exploração de imóveis", "Serviços financeiros diversos")))
+
+
 
 # shortcut <- (alt -)
 # filtra os dados com o ano atual
@@ -150,6 +166,11 @@ tbl %>%
 colnames(tbl)
 
 summary(tbl)
+
+
+tbl$Sharpe = Winsorize(tbl$Sharpe, 
+                      probs = c(0.01, 0.99),
+                      na.rm = TRUE)
 
 tbl$Trailing_12M_EBITDA_Margin = Winsorize(tbl$Trailing_12M_EBITDA_Margin,
                                            probs = c(0.01, 0.99),
@@ -249,12 +270,12 @@ corr <- tbl %>%
          "ESG Disclosure" = "ESG_Disclosure_Score",
          "EBIT" = "EBIT",
          "Revenue Growth" = "Revenue_Growth_Year_over_Year",
-         "Revenue_Adjusted",
+         "Revenue Adjusted" = "Revenue_Adjusted",
          "Liquidity"="Number_Of_Trades",
          "Volatility"="Volatility_360_Day",
          "Risk Premium" ="Risk_Premium",
          # "Last_Price",
-         "ESG_Score"="BESG_ESG_Score",
+         "ESG Score"="BESG_ESG_Score",
          "Sharpe"="Sharpe",
          "Beta" = "Beta_winsorized") %>% 
   cor(use = "pairwise.complete.obs")
@@ -274,8 +295,7 @@ ggcorrplot(corr,
            ggtheme=theme_bw)
 
 
-ggsave(filename = "./tese/Correlograma.png",units = "in",
-       width = 8, height = 6,dpi = 100, scale = 2)
+ggsave(filename = "./tese/Correlograma.png", units = "in", width = 8, height = 6,dpi = 100, scale = 2)
 
 
 # Calculo do d.ln(last_price) e SMB WML IML HML ---------------------------
@@ -290,7 +310,6 @@ tbl$d.ln_price = NA
 tbl$SMB = NA
 tbl$WML = NA
 tbl$IML = NA
-tbl$HML = NA
 tbl$HML = NA
 tbl$Rm_minus_Rf = NA
 
@@ -310,11 +329,11 @@ for(i in 1:nrow(tbl)){
     if(tbl$Acao[i] == tbl$Acao[i-1]){
       tbl$d.ln_price[i] = log(tbl$Last_Price[i])-log(tbl$Last_Price[i-1])
       
-      tbl$SMB[i] = tbl$Idx_SMB[i] - tbl$Idx_SMB[i-1]
-      tbl$WML[i] = tbl$Idx_WML[i] - tbl$Idx_WML[i-1]
-      tbl$IML[i] = tbl$Idx_IML[i] - tbl$Idx_IML[i-1]
-      tbl$HML[i] = tbl$Idx_HML[i] - tbl$Idx_HML[i-1]
-      tbl$Rm_minus_Rf[i] = tbl$Idx_Rm_minus_Rf[i] - tbl$Idx_Rm_minus_Rf[i-1]  
+      tbl$SMB[i] = log(tbl$Idx_SMB[i]) - log(tbl$Idx_SMB[i-1])
+      tbl$WML[i] = log(tbl$Idx_WML[i]) - log(tbl$Idx_WML[i-1])
+      tbl$IML[i] = log(tbl$Idx_IML[i]) - log(tbl$Idx_IML[i-1])
+      tbl$HML[i] = log(tbl$Idx_HML[i]) - log(tbl$Idx_HML[i-1])
+      tbl$Rm_minus_Rf[i] = log(tbl$Idx_Rm_minus_Rf[i]) - log(tbl$Idx_Rm_minus_Rf[i-1])
       
     } else{
       tbl$d.ln_price[i] = NA
@@ -424,5 +443,6 @@ tbl %>%
 
 
 # Salva a base de dados ---------------------------------------------------
-
+# saveRDS(object = tbl, file = "C:/BACKUP/BACKUP_JOAO_BARROSO/USER/Desktop/Doutorado Profissional/Minha Tese  DPE ESG/TESE DPE/base.rds")
 saveRDS(object = tbl, file = "./tese/base.rds")
+

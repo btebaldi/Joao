@@ -1,7 +1,7 @@
 #' ---
 #' title: "Capitulo 1"
 #' author: "João Luis Tenreiro Barroso"
-#' date: "2023-07-28"
+#' date: "2023-11-24"
 #' output: html_document
 #' ---
 #' 
@@ -25,7 +25,7 @@ library(plm)
 # Data load ---------------------------------------------------------------
 
 #  leitura da base de dados
-tbl <- readRDS(file = here::here("./tese/base.rds"))
+tbl <- readRDS(file = here::here("C:/BACKUP/BACKUP_JOAO_BARROSO/USER/Desktop/Doutorado Profissional/Minha Tese  DPE ESG/TESE DPE/base.rds"))
 
 
 # Determina os regressores ------------------------------------------------
@@ -63,6 +63,10 @@ f <- formula(paste("BESG_ESG_Score ~", regressores))
 fixed <- plm(formula = f, data = tbl, index = c("Acao", "Ano"), model="within")
 summary(fixed)
 
+# CONCLUSÃO 1.1 Empresas grandes, rentáveis e  alavancadas têm melhores práticas de ESG. 
+# Empresas com grande percentagem de ativos tangíves menos.
+
+
 # Efeitos aleatórios
 random <- plm(formula = f, data = tbl, index = c("Acao", "Ano"), model="random")
 summary(random)
@@ -78,16 +82,23 @@ f <- formula(paste("BESG_Environmental_Pillar_Score ~", regressores))
 fixed <- plm(formula = f, data = tbl, index = c("Acao", "Ano"), model="within")
 summary(fixed)
 
+# 1.1.E. Empresas grandes e alavancadas têm melhores práticas no pilar ambiental.
+# Empresas tangíveis menos.
+
 f <- formula(paste("BESG_Social_Pillar_Score ~", regressores))
 # Efeitos fixos
 fixed <- plm(formula = f, data = tbl, index = c("Acao", "Ano"), model="within")
 summary(fixed)
+
+# 1.1.S Empresas grandes,  rentáveis e alavancadas  têm melhores práticas no  pilar social. 
+
 
 f <- formula(paste("BESG_Governance_Pillar_Score ~", regressores))
 # Efeitos fixos
 fixed <- plm(formula = f, data = tbl, index = c("Acao", "Ano"), model="within")
 summary(fixed)
 
+# 1.1.G Empresas grandes, lucrativas  e com ações líquidas têm melhores práticas de governança. 
 
 # BESG_ESG_Score em lag ---------------------------------------------------
 
@@ -125,6 +136,10 @@ f <- formula(paste("ESG_Disclosure_Score ~", regressores))
 fixed <- plm(formula = f, data = tbl, index = c("Acao", "Ano"), model="within")
 summary(fixed)
 
+# CONCLUSÃO  1.2
+# Empresas grandes, rentáveis e líquidas divulgam mais as ações ESG. 
+# Tangíveis divulgam menos.
+
 # ESG Disclosure Score em seus diversos fatores ---------------------------
 
 # Determinantes do score Ambiental 
@@ -133,11 +148,18 @@ f <- formula(paste("Environmental_Disclosure_Score ~", regressores))
 fixed <- plm(formula = f, data = tbl, index = c("Acao", "Ano"), model="within")
 summary(fixed)
 
+# Empresas grandes, rentáveis e líquidas  divulgam mais ações ambientais.
+# Tangíveis e lucrativas, divulgam menos.
+
 # Determinantes do score Social
 f <- formula(paste("Social_Disclosure_Score ~", regressores))
 # Efeitos fixos
 fixed <- plm(formula = f, data = tbl, index = c("Acao", "Ano"), model="within")
 summary(fixed)
+
+
+# Empresas grandes, rentáveis, líquidas e voláteis  divulgam mais ações sociais. 
+# Tangíveis divulgam menos.
 
 # Determinantes do score de Governança 
 f <- formula(paste("Governance_Disclosure_Score ~", regressores))
@@ -145,6 +167,7 @@ f <- formula(paste("Governance_Disclosure_Score ~", regressores))
 fixed <- plm(formula = f, data = tbl, index = c("Acao", "Ano"), model="within")
 summary(fixed)
 
+# Empresas grandes, líquidas e lucrativas  divulgam mais ações de governança .
 
 # ESG Disclosure Score em lag ---------------------------------------------
 
@@ -173,3 +196,7 @@ f <- formula(paste("Governance_Disclosure_Score ~", regressores_LAG))
 # Efeitos fixos
 fixed <- plm(formula = f, data = tbl, index = c("Acao", "Ano"), model="within")
 summary(fixed)
+
+##  Empresas grandes sempre associadas a ESG Score e Disclosure.
+## Pilar social  associado a empresas  xxxxxx ; pilar de governança a empresas xxxxx; pilar social associado a
+
