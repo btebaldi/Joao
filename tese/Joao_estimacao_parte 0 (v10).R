@@ -94,6 +94,7 @@ tbl <- tbl %>%
   select(-PL)
 
 # Carrega dados de fatores
+# NEFIN_Factores <- read_excel(here::here("C:/BACKUP/BACKUP_JOAO_BARROSO/USER/Desktop/Doutorado Profissional/Minha Tese  DPE ESG/TESE DPE/NEFIN_Factores.xlsx"))
 NEFIN_Factores <- read_excel(here::here("./tese/NEFIN_Factores.xlsx"))
 
 NEFIN_Factores <- NEFIN_Factores %>%
@@ -103,6 +104,18 @@ NEFIN_Factores <- NEFIN_Factores %>%
          max_date = max(date)) %>% 
   filter(date == max_date) %>% 
   select(year, Idx_SMB, Idx_WML, Idx_IML, Idx_HML, Idx_Rm_minus_Rf)
+
+
+# Carrega dados do WACC
+# WACC_tbl <- read_excel(here::here("C:/BACKUP/BACKUP_JOAO_BARROSO/USER/Desktop/Doutorado Profissional/Minha Tese  DPE ESG/TESE DPE/WACC_v2.xlsx"), sheet = "Planilha1", na = "#N/A N/A")
+WACC_tbl <- read_excel(here::here("./tese/WACC_v2.xlsx"), sheet = "Planilha1", na = "#N/A N/A")
+WACC_tbl$Date <- as.Date(WACC_tbl$Date)
+
+library(lubridate)
+summary(WACC_tbl)
+WACC_tbl <- WACC_tbl %>% select(BBG_TICKER, Year, WACC_COST_DEBT, WACC, WACC_COST_EQUITY)
+
+tbl <- tbl %>% left_join(WACC_tbl, by = c("Ação" = "BBG_TICKER",  "Ano"="Year"))
 
 # Data regularization -----------------------------------------------------
 
@@ -277,6 +290,9 @@ corr <- tbl %>%
          # "Last_Price",
          "ESG Score"="BESG_ESG_Score",
          "Sharpe"="Sharpe",
+         "WACC_COST_DEBT",
+         "WACC",
+         "WACC_COST_EQUITY",
          "Beta" = "Beta_winsorized") %>% 
   cor(use = "pairwise.complete.obs")
 
@@ -285,14 +301,14 @@ corr <- tbl %>%
 
 ggcorrplot(corr,
            hc.order = TRUE, 
-           type = "upper",
+           type = "full",
            lab = TRUE, 
            lab_size = 3, 
            show.diag = TRUE,
            # method="circle",
            colors = c("tomato2", "white", "springgreen3"), 
-           title="Correlogram of mtcars", 
-           ggtheme=theme_bw)
+           title="Correlogram of mtcars",
+           ggtheme = ggplot2::theme_bw())
 
 
 ggsave(filename = "./tese/Correlograma.png", units = "in", width = 8, height = 6,dpi = 100, scale = 2)
@@ -329,12 +345,11 @@ for(i in 1:nrow(tbl)){
     if(tbl$Acao[i] == tbl$Acao[i-1]){
       tbl$d.ln_price[i] = log(tbl$Last_Price[i])-log(tbl$Last_Price[i-1])
       
-      tbl$SMB[i] = log(tbl$Idx_SMB[i]) - log(tbl$Idx_SMB[i-1])
-      tbl$WML[i] = log(tbl$Idx_WML[i]) - log(tbl$Idx_WML[i-1])
-      tbl$IML[i] = log(tbl$Idx_IML[i]) - log(tbl$Idx_IML[i-1])
-      tbl$HML[i] = log(tbl$Idx_HML[i]) - log(tbl$Idx_HML[i-1])
-      tbl$Rm_minus_Rf[i] = log(tbl$Idx_Rm_minus_Rf[i]) - log(tbl$Idx_Rm_minus_Rf[i-1])
-      
+      tbl$SMB[i] = ( log(tbl$Idx_SMB[i]) - log(tbl$Idx_SMB[i-1]) ) * 100
+      tbl$WML[i] = ( log(tbl$Idx_WML[i]) - log(tbl$Idx_WML[i-1]) ) * 100
+      tbl$IML[i] = ( log(tbl$Idx_IML[i]) - log(tbl$Idx_IML[i-1]) ) * 100
+      tbl$HML[i] = ( log(tbl$Idx_HML[i]) - log(tbl$Idx_HML[i-1]) ) * 100
+      tbl$Rm_minus_Rf[i] = ( log(tbl$Idx_Rm_minus_Rf[i]) - log(tbl$Idx_Rm_minus_Rf[i-1]) ) * 100
     } else{
       tbl$d.ln_price[i] = NA
       
